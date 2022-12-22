@@ -1,0 +1,6 @@
+# github.com/alecthomas/kong v0.6.1
+## explicit; go 1.13
+github.com/alecthomas/kong
+# inet.af/tcpproxy v0.0.0-20220326234310-be3ee21c9fa0
+## explicit; go 1.16
+inet.af/tcpproxy
