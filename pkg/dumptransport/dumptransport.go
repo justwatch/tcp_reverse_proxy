@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
+	"time"
 )
 
 type Transport struct {
@@ -11,12 +12,14 @@ type Transport struct {
 
 func (p *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	reqDump, _ := httputil.DumpRequestOut(req, true)
+	requestStart := time.Now()
 	resp, err := http.DefaultTransport.RoundTrip(req)
+	requestDuration := time.Since(requestStart)
 	if err != nil {
-		log.Printf("REQUEST\n%s\nRESPONSE\nCould not be loaded as of error %q", reqDump, err)
+		log.Printf("%s %s\n\nDURATION %s\n\nREQUEST\n%s\n\nRESPONSE\nCould not be loaded as of error %q", req.Method, req.URL, requestDuration, reqDump, err)
 		return nil, err
 	}
 	respDump, _ := httputil.DumpResponse(resp, true)
-	log.Printf("REQUEST\n%s\nRESPONSE\n%s", reqDump, respDump)
+	log.Printf("%s %s\n\nDURATION %s\n\nREQUEST\n%s\n\n%s", req.Method, req.URL, requestDuration, reqDump, respDump)
 	return resp, err
 }
