@@ -52,7 +52,7 @@ func main() {
 		}
 	}
 
-	proxy := &httputil.ReverseProxy{}
+	proxy := httputil.NewSingleHostReverseProxy(origin)
 	if cli.DumpRequests {
 		proxy.Transport = &dumptransport.Transport{}
 	}
