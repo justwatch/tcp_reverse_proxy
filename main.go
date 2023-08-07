@@ -43,7 +43,9 @@ func main() {
 
 	handler := func(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
 		return func(w http.ResponseWriter, r *http.Request) {
-			log.Printf("%s %s", r.Method, r.URL)
+			if !cli.DumpRequests {
+				log.Printf("%s %s", r.Method, r.URL)
+			}
 			r.Host = origin.Host
 			for header, value := range extraHeaders {
 				r.Header.Add(header, value)
