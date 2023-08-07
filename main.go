@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/alecthomas/kong"
+	"github.com/simonfrey/saf_tcp_everse_proxy/pkg/dumptransport"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -14,6 +15,7 @@ var cli struct {
 	ListenPort         int      `kong:"default='9200',env='LISTEN_PORT',help='port to listen on'"`
 	OriginAddress      string   `kong:"default='https://www.google.com/',env='ORIGIN_ADDRESS',help='upstream address to connect to. Can be IP or name, later one will be resolved'"`
 	ExtraOriginHeaders []string `kong:"env='EXTRA_ORIGIN_HEADERS',help='Additional headers to add to the request, in the form of key1=value1,key2=value2'"`
+	DumpRequests       bool     `kong:"env='DUMP_REQUEST',help='If set to true then all request and responses will be dumped to the console'"`
 }
 
 func main() {
@@ -50,7 +52,11 @@ func main() {
 		}
 	}
 
-	proxy := httputil.NewSingleHostReverseProxy(origin)
+	proxy := &httputil.ReverseProxy{}
+	if cli.DumpRequests {
+		proxy.Transport = &dumptransport.Transport{}
+	}
+
 	http.HandleFunc("/", handler(proxy))
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cli.ListenPort), nil))
