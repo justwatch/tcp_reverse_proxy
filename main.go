@@ -3,11 +3,14 @@ package main
 import (
 	"fmt"
 	"github.com/alecthomas/kong"
+	"github.com/rs/zerolog"
 	"github.com/simonfrey/saf_tcp_everse_proxy/pkg/dumptransport"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
+
+	"github.com/rs/zerolog/log"
 	"strings"
 )
 
@@ -16,27 +19,33 @@ var cli struct {
 	OriginAddress      string   `kong:"default='https://www.google.com/',env='ORIGIN_ADDRESS',help='upstream address to connect to. Can be IP or name, later one will be resolved'"`
 	ExtraOriginHeaders []string `kong:"env='EXTRA_ORIGIN_HEADERS',help='Additional headers to add to the request, in the form of key1=value1,key2=value2'"`
 	DumpRequests       bool     `kong:"env='DUMP_REQUEST',help='If set to true then all request and responses will be dumped to the console'"`
+	JSONLogFormat      bool     `kong:"env='JSON_LOG_FORMAT',help='If set to true, then log as JSON output'"`
 }
 
 func main() {
 	kong.Parse(&cli)
 
+	if !cli.JSONLogFormat {
+		// Use Human readable (console out) log format
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
+	}
+
 	origin, err := url.Parse(cli.OriginAddress)
 	if err != nil {
-		log.Fatal("Failed to parse origin address", err)
+		log.Fatal().Err(err).Msg("failed to parse origin address")
 	}
 	if origin.Host == "" {
-		log.Fatal("Failed to parse origin address, no host found")
+		log.Fatal().Msg("Failed to parse origin address, no host found")
 	}
 	if origin.Scheme == "" {
-		log.Fatal("Failed to parse origin address, no scheme found")
+		log.Fatal().Msg("Failed to parse origin address, no scheme found")
 	}
 
 	extraHeaders := map[string]string{}
 	for _, header := range cli.ExtraOriginHeaders {
 		parts := strings.Split(header, "=")
 		if len(parts) != 2 {
-			log.Fatal("Failed to parse extra header", header)
+			log.Fatal().Msgf("Failed to parse extra header", header)
 		}
 		extraHeaders[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
 	}
@@ -44,7 +53,7 @@ func main() {
 	handler := func(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
 		return func(w http.ResponseWriter, r *http.Request) {
 			if !cli.DumpRequests {
-				log.Printf("%s %s", r.Method, r.URL)
+				log.Info().Msgf("%s %s", r.Method, r.URL)
 			}
 			r.Host = origin.Host
 			for header, value := range extraHeaders {
@@ -61,5 +70,5 @@ func main() {
 
 	http.HandleFunc("/", handler(proxy))
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cli.ListenPort), nil))
+	log.Fatal().Err(http.ListenAndServe(fmt.Sprintf(":%d", cli.ListenPort), nil))
 }

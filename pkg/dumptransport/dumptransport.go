@@ -1,7 +1,8 @@
 package dumptransport
 
 import (
-	"log"
+	"github.com/rs/zerolog/log"
+
 	"net/http"
 	"net/http/httputil"
 	"time"
@@ -16,10 +17,16 @@ func (p *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp, err := http.DefaultTransport.RoundTrip(req)
 	requestDuration := time.Since(requestStart)
 	if err != nil {
-		log.Printf("%s %s\n\nDURATION %s\n\nFULL REQUEST\n%s\n\nFULL RESPONSE\nCould not be loaded as of error %q", req.Method, req.URL, requestDuration, reqDump, err)
+		log.Error().Str("duration", requestDuration.String()).
+			Str("request", string(reqDump)).
+			Err(err).
+			Msgf("%s %s Could not be loaded as of error", req.Method, req.URL)
 		return nil, err
 	}
 	respDump, _ := httputil.DumpResponse(resp, true)
-	log.Printf("%s %s\n\nDURATION %s\n\nFULL REQUEST\n%s\n\nFULL RESPONSE%s", req.Method, req.URL, requestDuration, reqDump, respDump)
+	log.Info().Str("duration", requestDuration.String()).
+		Str("request", string(reqDump)).
+		Str("response", string(respDump)).
+		Msgf("%s %s", req.Method, req.URL)
 	return resp, err
 }
