@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/alecthomas/kong"
 	"github.com/rs/zerolog"
-	"github.com/simonfrey/saf_tcp_everse_proxy/pkg/dumptransport"
+	"github.com/simonfrey/saf_http_reverse_proxy/pkg/dumptransport"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
